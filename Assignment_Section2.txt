@@ -1,0 +1,165 @@
+
+		
+	Section 2: Working with Northwind data and SQL.
+
+	SQL statements
+
+	i.	Write a query to get Product list (name, unit price) of ten most expensive 
+		products.
+	Ans: -- Create view vwTenMost_Exp_Products
+		create or replace view vwTenMost_Exp_Products
+		as
+		select distinct ProductName as Ten_Most_Exp_Products, 
+       				UnitPrice
+			from Products
+		order by UnitPrice desc
+		limit 10;
+
+		mysql> select * from vwTenMost_Exp_Products;
+			+-------------------------+-----------+
+			| Ten_Most_Exp_Products   | UnitPrice |
+			+-------------------------+-----------+
+			| Côte de Blaye           |  263.5000 |
+			| Thüringer Rostbratwurst |  123.7900 |
+			| Mishi Kobe Niku         |   97.0000 |
+			| Sir Rodney's Marmalade  |   81.0000 |
+			| Carnarvon Tigers        |   62.5000 |
+			| Raclette Courdavault    |   55.0000 |
+			| Manjimup Dried Apples   |   53.0000 |
+			| Tarte au sucre          |   49.3000 |
+			| Ipoh Coffee             |   46.0000 |
+			| Rössle Sauerkraut       |   45.6000 |
+			+-------------------------+-----------+
+			10 rows in set (0.00 sec)mysql> select * from vwTenMost_Exp_Products;
+					
+
+
+	ii. 	Number of units in stock by Category(Category Name) and supplier country?
+	Ans: -- select CategoryName as "Product Category",Country as "Supplier Countries", 
+        		sum(p.UnitsInStock) as UnitsInStock
+		from products p 
+		inner join Categories c on c.CategoryID=p.CategoryID
+		inner join Suppliers s on p.SupplierID=s.SupplierID 
+		group by c.CategoryName;
+
+		+------------------+--------------------+--------------+
+		| Product Category | Supplier Countries | UnitsInStock |
+		+------------------+--------------------+--------------+
+		| Beverages        | UK                 |          559 |
+		| Condiments       | UK                 |          507 |
+		| Confections      | Australia          |          386 |
+		| Dairy Products   | Spain              |          393 |
+		| Grains/Cereals   | Sweden             |          308 |
+		| Meat/Poultry     | Japan              |          165 |
+		| Produce          | USA                |          100 |
+		| Seafood          | Japan              |          701 |
+		+------------------+--------------------+--------------+
+		8 rows in set (0.14 sec)
+
+         	
+
+	iii. 	Find out the quartely orders for each product for the year 1997?
+	Ans: 	select 	a.ProductName, 
+			d.CompanyName, 
+			year(OrderDate) as OrderYear,
+			format(sum(case quarter(c.OrderDate) when '1' 
+				then b.UnitPrice*b.Quantity*(1-b.Discount) else 0 end), 0) "Qtr 1",
+    		format(sum(case quarter(c.OrderDate) when '2' 
+        		then b.UnitPrice*b.Quantity*(1-b.Discount) else 0 end), 0) "Qtr 2",
+    		format(sum(case quarter(c.OrderDate) when '3' 
+        		then b.UnitPrice*b.Quantity*(1-b.Discount) else 0 end), 0) "Qtr 3",
+    		format(sum(case quarter(c.OrderDate) when '4' 
+        		then b.UnitPrice*b.Quantity*(1-b.Discount) else 0 end), 0) "Qtr 4" 
+		from Products a 
+		inner join Order_Details b on a.ProductID = b.ProductID
+		inner join Orders c on c.OrderID = b.OrderID
+		inner join Customers d on d.CustomerID = c.CustomerID 
+		where c.OrderDate between date('1997-01-01') and date('1997-12-31')
+		group by a.ProductName, 
+    			d.CompanyName, 
+    			year(OrderDate)
+		order by a.ProductName, d.CompanyName;
+		
+		+----------------------------------+------------------------------------+-----------+--------+--------+-------+--------+
+		| ProductName                      | CompanyName                        | OrderYear | Qtr 1  | Qtr 2  | Qtr 3 | Qtr 4  |
+		+----------------------------------+------------------------------------+-----------+--------+--------+-------+--------+
+		| Alice Mutton                     | Antonio Moreno Taquería            |      1997 | 0      | 1,404  | 0     | 0      |
+		| Alice Mutton                     | Berglunds snabbköp                 |      1997 | 624    | 0      | 0     | 0      |
+		| Alice Mutton                     | Bólido Comidas preparadas          |      1997 | 0      | 0      | 0     | 3,120  |
+		| Alice Mutton                     | Bottom-Dollar Markets              |      1997 | 3,120  | 0      | 0     | 0      |
+		| Alice Mutton                     | Ernst Handel                       |      1997 | 2,808  | 0      | 0     | 5,928  |
+		| Alice Mutton                     | Godos Cocina Típica                |      1997 | 0      | 624    | 0     | 0      |
+		| Alice Mutton                     | Hungry Coyote Import Store         |      1997 | 125    | 0      | 0     | 0      |
+		| Alice Mutton                     | Piccolo und mehr                   |      1997 | 0      | 3,120  | 2,340 | 0      |
+	
+		
+		| Zaanse koeken                    | Folies gourmandes                  |      1997 | 456    | 0      | 0     | 0      |
+		| Zaanse koeken                    | Folk och fä HB                     |      1997 | 0      | 0      | 0     | 570    |
+		| Zaanse koeken                    | Franchi S.p.A.                     |      1997 | 0      | 0      | 0     | 95     |
+		| Zaanse koeken                    | Gourmet Lanchonetes                |      1997 | 0      | 0      | 285   | 0      |
+		| Zaanse koeken                    | Great Lakes Food Market            |      1997 | 0      | 0      | 114   | 0      |
+		| Zaanse koeken                    | Morgenstern Gesundkost             |      1997 | 0      | 0      | 0     | 228    |
+		| Zaanse koeken                    | Ottilies Käseladen                 |      1997 | 0      | 0      | 760   | 0      |
+		| Zaanse koeken                    | QUICK-Stop                         |      1997 | 836    | 0      | 0     | 0      |
+		| Zaanse koeken                    | Save-a-lot Markets                 |      1997 | 0      | 0      | 190   | 950    |
+		| Zaanse koeken                    | Wellington Importadora             |      1997 | 0      | 0      | 285   | 0      |
+		+----------------------------------+------------------------------------+-----------+--------+--------+-------+--------+
+		947 rows in set (0.15 sec)
+
+
+	iv. 	Give the name of employees and the city where they live for employees who 
+		have sold to customers in the same city?
+	Ans: 	select   City,CompanyName, ContactName, 'Customers' as Relationship 
+		from Customers
+		union
+		select  CompanyName,City, ContactName, 'Suppliers'
+		from Suppliers
+		order by City;
+		+-----------------+----------------------------------------+----------------------------+--------------+
+		| City            | CompanyName                            | ContactName                | Relationship |
+		+-----------------+----------------------------------------+----------------------------+--------------+
+		| Aachen          | Drachenblut Delikatessen               | Sven Ottlieb               | Customers    |
+		| Albuquerque     | Rattlesnake Canyon Grocery             | Paula Wilson               | Customers    |
+		| Anchorage       | Old World Delicatessen                 | Rene Phillips              | Customers    |
+		| Ann Arbor       | Grandma Kelly's Homestead              | Regina Murphy              | Suppliers    |
+		| Annecy          | Gai pâturage                           | Eliane Noz                 | Suppliers    |
+		| Århus           | Vaffeljernet                           | Palle Ibsen                | Customers    |
+		| Barcelona       | Galería del gastrónomo                 | Eduardo Saavedra           | Customers    |
+		
+		| Torino          | Franchi S.p.A.                         | Paolo Accorti              | Customers    |
+		| Toulouse        | La maison d'Asie                       | Annette Roulet             | Customers    |
+		| Tsawassen       | Bottom-Dollar Markets                  | Elizabeth Lincoln          | Customers    |
+		| Vancouver       | Laughing Bacchus Wine Cellars          | Yoshi Tannamuri            | Customers    |
+		| Versailles      | La corne d'abondance                   | Daniel Tonini              | Customers    |
+		| Walla Walla     | Lazy K Kountry Store                   | John Steel                 | Customers    |
+		| Warszawa        | Wolski  Zajazd                         | Zbyszek Piestrzeniewicz    | Customers    |
+		| Zaandam         | Zaanse Snoepfabriek                    | Dirk Luchte                | Suppliers    |
+		+-----------------+----------------------------------------+----------------------------+--------------+
+		120 rows in set (0.41 sec)
+
+
+	v. 	Give the names of employees who are strictly older than any employee who lives in London.
+	Ans: 	select concat(FirstName , LastName) as EmpOlderthanLondonEmployees
+		From employees
+		where BirthDate < (
+    					Select max(BirthDate) from employees
+    					where City='London'
+		);
+
+				+-----------------------------+
+				| EmpOlderthanLondonEmployees |
+				+-----------------------------+
+				| NancyDavolio                |
+				| AndrewFuller                |
+				| JanetLeverling              |
+				| MargaretPeacock             |
+				| StevenBuchanan              |
+				| MichaelSuyama               |
+				| RobertKing                  |
+				| LauraCallahan               |
+				+-----------------------------+
+				8 rows in set (0.00 sec)	
+
+
+	
+	
